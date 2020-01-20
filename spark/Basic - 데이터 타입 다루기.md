@@ -89,3 +89,58 @@
   - partitionBy : 그룹을 어떻게 나눌지 결정
   - orderBy : 파티션의 정렬 방ㅅ기을 정의
   - rowsBetween : 입력된 로우의 참조를 기반으로 프레임에 로우가 포함될 수 있는지를 결정
+
+---
+
+#### SparkSession
+
+- ```scala
+  import org.apache.spark.sql.SparkSession
+  
+  val spark = SparkSession
+    .builder()
+    .appName("Spark SQL basic example")
+    .config("spark.some.config.option", "some-value")
+    .getOrCreate()
+  
+  // For implicit conversions like converting RDDs to DataFrames
+  import spark.implicits._
+  ```
+
+
+
+#### implicits Object
+
+- Scala object 또는 RDD들을 `Dataset`, `Dataframe`, `Columns` 등으로 암시적 변환
+  - 변환하기 전에 `import SparkSession.implicits._`를 선언해줘야 한다.
+- `SparkSession` 객체에 정의되어 있다.
+
+
+
+```scala
+val checkList = ListBuffer.fill(N)(SOME_VALUE)
+var flag = true
+val baseDataframe = spark.read.csv.{...}
+val threshold = THRESHOLD_VALUE
+
+while(flag){
+    // dataframe operation
+	val someDataframe1 = checkList.toDF("SOME_COL")
+    val someDataframe2 = baseDataframe.join(someDataframe1)
+    val someDataframe3 = someDataframe2.groupBy(...).sum(...)
+    val someDataframe4 = someDataframe2.join(someDataframe3)
+    val someDataframe5 = someDataframe4.groupBy(...).sum(...)
+    
+    // update checkList
+    val checkValue = someDataframe5.agg(max("SOME_COL")).first.getDouble(0)
+    
+    if(checkValue < threshold){
+        flag=false
+    }
+    else{
+        checkList.clear()
+        someDataframe5.collect().foreach(row=>{checkList.append(row.getDouble(0))})
+    }
+}
+```
+
